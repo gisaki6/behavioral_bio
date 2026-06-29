@@ -1,0 +1,60 @@
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+import json
+
+class KeystrokeDynamicsDetector:
+    def __init__(self):
+        # Using Isolation Forest for anomaly detection (unsupervised behavioral baseline)
+        self.model = IsolationForest(contamination=0.1, random_state=42)
+        
+    def train_baseline(self, baseline_data):
+        """Trains the model on the authorized user's typical typing metrics."""
+        df = pd.DataFrame(baseline_data)
+        # Features: Dwell Time (key press duration), Flight Time (time between keys)
+        features = df[['dwell_time', 'flight_time']]
+        self.model.fit(features)
+        print("✅ Behavioral baseline established successfully.")
+
+    def verify_session(self, current_session_data):
+        """Verifies if the current typing behavior matches the baseline."""
+        df = pd.DataFrame(current_session_data)
+        features = df[['dwell_time', 'flight_time']]
+        predictions = self.model.predict(features)
+        
+        # Calculate anomaly rate (-1 indicates an anomaly)
+        anomaly_rate = np.mean(predictions == -1)
+        
+        print(f"🔍 Analysis Complete. Anomaly Rate: {anomaly_rate:.2%}")
+        if anomaly_rate > 0.35: # Threshold for flag
+            return "🚨 ALERT: Behavioral mismatch detected. Potential session hijacking!"
+        return "🔒 ACCESS GRANTED: Behavioral biometrics verified."
+
+# Mock Data: Simulation of keypress timing (in milliseconds)
+authorized_profile = [
+    {"dwell_time": 85, "flight_time": 120},
+    {"dwell_time": 90, "flight_time": 115},
+    {"dwell_time": 88, "flight_time": 130},
+    {"dwell_time": 95, "flight_time": 110},
+    {"dwell_time": 82, "flight_time": 125},
+]
+
+attacker_profile = [
+    {"dwell_time": 190, "flight_time": 340}, # Significantly slower/erratic typing
+    {"dwell_time": 185, "flight_time": 290},
+    {"dwell_time": 210, "flight_time": 310},
+]
+
+if __name__ == "__main__":
+    detector = KeystrokeDynamicsDetector()
+    
+    print("Step 1: Profile Training Phase...")
+    detector.train_baseline(authorized_profile)
+    
+    print("\nStep 2: Simulating Authorized User Session...")
+    result_auth = detector.verify_session(authorized_profile)
+    print(result_auth)
+    
+    print("\nStep 3: Simulating Attacker/Anomaly Session...")
+    result_attack = detector.verify_session(attacker_profile)
+    print(result_attack)
