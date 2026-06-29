@@ -1,0 +1,13 @@
+#Structural format
+
+behavioral-biometrics/
+│
+├── data/
+│   └── keystroke_dataset.json
+├── src/
+│   ├── __init__.py
+│   ├── data_processor.py
+│   └── model.py
+├── main.py
+├── requirements.txt
+└── README.md
